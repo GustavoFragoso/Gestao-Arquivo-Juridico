@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistema de Gestão de Arquivo Jurídico - Advocacia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="jspdf.umd.min.js"></script>
+</head>
+<body>
+<header class="brand-header">
+  <div class="brand-header-content">
+    <div class="brand-monogram">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 20C32.5 20 20 32.5 20 48C20 63.5 32.5 76 48 76C56.5 76 64 72.2 69 66.2V54H48V61H61.2C58.5 66.8 52.8 70 47.5 70C36.2 70 27 60.8 27 49.5C27 38.2 36.2 29 47.5 29C54.2 29 60.1 32.2 63.8 37.2L69.5 32C64.3 24.6 55.8 20 48 20Z" fill="url(#gold-grad)"/>
+        <path d="M52 22H78V28H59V45H75V51H59V76H52V22Z" fill="url(#gold-grad)"/>
+        <defs>
+          <linearGradient id="gold-grad" x1="20" y1="20" x2="78" y2="76" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#E2C275"/>
+            <stop offset="0.5" stop-color="#C5A059"/>
+            <stop offset="1" stop-color="#9E7B3B"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="brand-info">
+      <h1 class="brand-title">Advocacia & Assessoria Jurídica</h1>
+      <p class="brand-subtitle">Sistema de Gestão de Arquivo & Digitalização</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <nav class="main-tabs" id="mainNav" hidden>
+    <button type="button" class="tab-btn active" id="tabClients">👥 Clientes & Documentos</button>
+    <button type="button" class="tab-btn" id="tabOffice">🏢 Documentos do Escritório</button>
+  </nav>
+
+  <section class="card start" id="storageCard">
+    <h2>Pasta do Arquivo Jurídico</h2>
+    <p>Selecione a pasta do <strong>Escritório de Advocacia</strong> no seu computador. Os documentos dos clientes serão salvos automaticamente na subpasta “BANCO DE DOCUMENTOS DOS CLIENTES”.</p>
+    <button type="button" class="primary large" id="chooseFolder">📁 Selecionar pasta do escritório</button>
+    <p class="status" id="setupStatus"></p>
+  </section>
+
+  <section id="app" hidden>
+    <div class="toolbar">
+      <label class="search"><span>Buscar cliente</span><input id="searchClient" placeholder="Digite um nome para buscar..." autocomplete="off"></label>
+      <div class="toolbar-actions">
+        <input id="csvInput" type="file" accept=".csv,text/csv" hidden>
+        <button type="button" class="secondary" id="importCsv">📥 Importar dados</button>
+        <button type="button" class="primary" id="showClientForm">+ Novo cliente</button>
+      </div>
+    </div>
+
+    <section id="dashboardView">
+      <h2>Clientes Cadastrados</h2>
+      <p class="muted">Selecione um cliente para gerenciar seus dados e documentos em PDF.</p>
+      <div id="clientResults" class="client-results"></div>
+    </section>
+
+    <section id="officeView" hidden>
+      <h2>Documentos do Escritório</h2>
+      <p class="muted">Gerencie modelos, contratos, comprovantes financeiros, impostos e alvarás do escritório.</p>
+      
+      <section class="card document-card">
+        <h3>Digitalizar & Adicionar Documento do Escritório</h3>
+        <div class="document-form-grid">
+          <label>Data do documento
+            <input type="date" id="officeDocDate">
+          </label>
+          <label>Categoria do Escritório
+            <select id="officeCategory"></select>
+          </label>
+          <label>Tipo do documento
+            <select id="officeDocPreset"></select>
+          </label>
+          <label>Nome final do arquivo
+            <input id="officeDocCustomName" placeholder="Ex.: Modelo de Procuração, DARF, etc.">
+          </label>
+        </div>
+        <div class="document-actions">
+          <button type="button" class="primary scanner-btn" id="openOfficeScanner">🖨️ Digitalizar folha (300 DPI)</button>
+          <button type="button" class="primary scanner-btn" id="scanOfficeNextPage" hidden>➕ Digitalizar próxima folha</button>
+          <label class="file-label-btn">
+            📁 Importar arquivo(s)/foto(s)
+            <input id="officeFileInput" type="file" accept="application/pdf,image/*" multiple hidden>
+          </label>
+        </div>
+
+        <div id="officePagesSummaryContainer" class="pages-summary" hidden>
+          <span id="officePagesBadge" class="pages-badge">📄 Páginas do documento: 0</span>
+          <span class="pages-hint">PDFs maiores que 1000 KB (1 MB) serão divididos automaticamente em partes.</span>
+        </div>
+        <div id="officePagesGridContainer" class="pages-grid"></div>
+
+        <div class="save-bar">
+          <button type="button" class="gold-button large" id="saveOfficeDocument" disabled>💾 Salvar documento do escritório em PDF</button>
+        </div>
+        <p id="officeDocumentStatus" class="status"></p>
+      </section>
+
+      <h3>Pastas do Escritório</h3>
+      <div id="officeFolders" class="folders"></div>
+    </section>
+
+    <section class="card view" id="clientFormView" hidden>
+      <button type="button" class="link-button back">← Voltar para clientes</button>
+      <h2 id="clientFormTitle">Adicionar cliente</h2>
+      <div class="form-grid">
+        <label>Nome completo <span class="required">*</span><input id="clientName" required placeholder="Ex.: Maria da Silva"></label>
+        <label>CPF <span class="optional">(opcional)</span><input id="clientCpf" inputmode="numeric" placeholder="000.000.000-00"></label>
+        <label class="wide">Endereço <span class="optional">(opcional)</span><input id="clientAddress" placeholder="Rua, número, bairro, cidade"></label>
+        <label>Telefone <span class="optional">(opcional)</span><input id="clientPhone" type="tel" placeholder="(87) 90000-0000"></label>
+      </div>
+      <div class="types"><strong>Tipo de atendimento <span class="optional">(opcional)</span></strong>
+        <label><input type="checkbox" name="serviceType" value="Aposentadoria"> Aposentadoria</label>
+        <label><input type="checkbox" name="serviceType" value="Auxílio-maternidade"> Auxílio-maternidade</label>
+        <label><input type="checkbox" name="serviceType" value="Criminal"> Criminal</label>
+        <label><input type="checkbox" name="serviceType" value="Aposentadoria rural"> Aposentadoria rural</label>
+        <label><input type="checkbox" name="serviceType" value="Auxílio-doença ou acidente"> Auxílio-doença ou acidente</label>
+      </div>
+      <button type="button" class="primary large" id="saveClient">💾 Salvar cadastro</button><p class="status" id="clientStatus"></p>
+    </section>
+
+    <section class="view" id="clientDetailView" hidden>
+      <button type="button" class="link-button back">← Voltar para clientes</button>
+      <div class="client-heading">
+        <div><h2 id="detailName"></h2><p id="detailInfo" class="muted"></p></div>
+        <div class="client-heading-actions">
+          <button type="button" class="secondary" id="editClient">✏️ Editar dados</button>
+          <button type="button" class="danger" id="deleteClient">🗑️ Excluir cliente</button>
+        </div>
+      </div>
+      <section class="card document-card">
+        <h3>Digitalizar & Adicionar Documento PDF</h3>
+        <div class="document-form-grid">
+          <label>Data do documento
+            <input type="date" id="docDate">
+          </label>
+          <label>Categoria (Pasta)
+            <select id="category"></select>
+          </label>
+          <label>Tipo do documento
+            <select id="docPreset"></select>
+          </label>
+          <label id="customNameLabel">Nome final do arquivo
+            <input id="docCustomName" placeholder="Ex.: RG, Laudo Médico, etc.">
+          </label>
+        </div>
+        <div class="document-actions">
+          <button type="button" class="primary scanner-btn" id="openScanner">🖨️ Digitalizar folha (300 DPI)</button>
+          <button type="button" class="primary scanner-btn" id="scanNextPage" hidden>➕ Digitalizar próxima folha</button>
+          <label class="file-label-btn">
+            📁 Importar arquivo(s)/foto(s)
+            <input id="fileInput" type="file" accept="application/pdf,image/*" multiple hidden>
+          </label>
+        </div>
+
+        <div id="pagesSummaryContainer" class="pages-summary" hidden>
+          <span id="pagesBadge" class="pages-badge">📄 Páginas do documento: 0</span>
+          <span class="pages-hint">Se o PDF ultrapassar 1000 KB (1 MB), o sistema dividirá o documento em partes automaticamente (Parte 1, Parte 2...).</span>
+        </div>
+        <div id="pagesGridContainer" class="pages-grid"></div>
+
+        <div class="save-bar">
+          <button type="button" class="gold-button large" id="saveDocument" disabled>💾 Salvar documento em PDF</button>
+        </div>
+        <p id="documentStatus" class="status"></p>
+      </section>
+      <h3>Pastas de Documentos</h3><div id="documentFolders" class="folders"></div>
+    </section>
+  </section>
+
+  <section class="modal" id="afterSaveModal" hidden><div class="modal-box"><h2>Cadastro concluído</h2><p>Deseja adicionar documentos para este cliente agora?</p><div><button type="button" class="secondary" id="goDashboard">Voltar para a lista</button><button type="button" class="primary" id="scanNow">Digitalizar agora</button></div></div></section>
+
+  <section class="modal" id="nextPageModal" hidden>
+    <div class="modal-box next-page-box">
+      <h2>Página Adicionada!</h2>
+      <p id="nextPageModalText">Deseja digitalizar a próxima folha deste mesmo documento?</p>
+      <div class="modal-buttons">
+        <button type="button" class="primary" id="btnScanAnotherPage">🖨️ Sim, digitalizar próxima folha</button>
+        <button type="button" class="secondary" id="btnFinishDocument">✅ Concluir documento</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="modal" id="deleteClientModal" hidden>
+    <div class="modal-box delete-client-box">
+      <h2>⚠️ Confirmar Exclusão de Cliente</h2>
+      <p id="deleteClientModalText"></p>
+      <label class="delete-confirm-label">
+        Para confirmar a exclusão, digite <strong>SIM</strong> no campo abaixo:
+        <input id="deleteClientConfirmInput" placeholder="Digite SIM" autocomplete="off">
+      </label>
+      <div class="modal-buttons">
+        <button type="button" class="secondary" id="btnCancelDeleteClient">Cancelar</button>
+        <button type="button" class="danger" id="btnConfirmDeleteClient" disabled>🗑️ Excluir Definitivamente</button>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="footer-info">
+  <p>Sistema de Gestão de Arquivo Jurídico • Advocacia & Assessoria Jurídica</p>
+</footer>
+<script src="app.js"></script></body></html>ection>
+</main><script src="app.js"></script></body></html>
